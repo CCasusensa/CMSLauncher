@@ -134,7 +134,7 @@ namespace {
 			}
 			// Login UI is loaded
 			if (!HookEx::RemoveManipulatePacketCheck(gMapleR)) {
-				DEBUG(L"Unable to remove Game Menu Check");
+				DEBUG(L"Unable to remove Manipulate Packet Check");
 			}
 			if (!HookEx::RemoveRenderFrameCheck(gMapleR)) {
 				DEBUG(L"Unable to remove Render Frame Check");
@@ -167,6 +167,12 @@ namespace {
 			// Found in ShowStartUpWnd
 			lpWindowName = Config::WindowTitle.c_str(); //Customize game window title 			
 			Wnd::FixMinimizeButton(dwStyle); // Show minimize button for CMS79 - CMS84
+			// Place the game window in the center of the screen
+			RECT screenRect;
+			GetWindowRect(GetDesktopWindow(), &screenRect);
+			int centerX = screenRect.right / 2 - nWidth / 2;
+			int centerY = screenRect.bottom / 2 - nHeight / 2;
+			return _CreateWindowExA(dwExStyle, lpClassName, lpWindowName, dwStyle, centerX, centerY, nWidth, nHeight, hWndParent, hMenu, hInstance, lpParam);
 		}
 		if (lpClassName && strstr(lpClassName, "ShandaADBallon") || lpClassName && strstr(lpClassName, "ShandaADBrowser")) {
 			// Found in WinMain
