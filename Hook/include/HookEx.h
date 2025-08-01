@@ -1,6 +1,4 @@
 #pragma once
-#include "Share/Rosemary.h"
-
 
 namespace HookEx {
 #pragma region AntiCheat

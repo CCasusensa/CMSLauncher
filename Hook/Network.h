@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Share/Rosemary.h"
-
 namespace Network {
 	bool InitWSAData(); // Ready for Winsock
 	void ClearupWSA(); // Free Winsock

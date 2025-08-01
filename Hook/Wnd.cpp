@@ -1,7 +1,5 @@
+#include "pch.h"
 #include "Wnd.h"
-
-#include "Resources/AOBList.h"
-#include "Share/Tool.h"
 
 namespace Wnd {
 	void FixMinimizeButton(DWORD& dwStyle) {

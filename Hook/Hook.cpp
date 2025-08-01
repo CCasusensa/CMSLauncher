@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "Hook.h"
 #include "Network.h"
 #include "ResMan.h"
@@ -5,17 +6,9 @@
 #include "DamageSkin.h"
 
 #include "Resources/Config.h"
-#include "Share/Funcs.h"
-#include "Share/Tool.h"
-
-#include "HookEx.h"
-#pragma comment(lib, "HookEx.lib")
 
 #include <imm.h>
 #pragma comment(lib, "imm32.lib")
-
-#include<intrin.h>
-#pragma intrinsic(_ReturnAddress)
 
 namespace {
 	static Rosemary gMapleR;
@@ -23,71 +16,27 @@ namespace {
 	static bool bCreateMutexALoaded = false;
 	static bool bImmAssociateContextLoaded = false;
 
-	void GetModuleEntryList(std::vector<MODULEENTRY32W>& entryList) {
-		DWORD pid = GetCurrentProcessId();
-
-		if (!pid) {
-			return;
-		}
-
-		HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, pid);
-
-		if (hSnapshot == INVALID_HANDLE_VALUE) {
-			return;
-		}
-
-		MODULEENTRY32W me32;
-		memset(&me32, 0, sizeof(me32));
-		me32.dwSize = sizeof(me32);
-		if (!Module32FirstW(hSnapshot, &me32)) {
-			CloseHandle(hSnapshot);
-			return;
-		}
-
-		entryList.clear();
-
-		do {
-			entryList.push_back(me32);
-		} while (Module32NextW(hSnapshot, &me32));
-
-		CloseHandle(hSnapshot);
-	}
-
 	// Make sure the executable unpacks itself.
-	bool IsEXECaller(void* vReturnAddress) {
-		if (gMapleR.IsInitialized()) {
-			DEBUG(L"gMapleR has already been initialized");
-			return true;
-		}
-		std::vector<MODULEENTRY32W> entryList;
-		GetModuleEntryList(entryList);
-		if (entryList.empty()) {
-			DEBUG(L"EXE hasn't been call yet");
+	bool IsEXECaller(void* pReturnAddress) {
+		if (!IsModuleCalled(L"MapleStory.exe", pReturnAddress)) {
 			return false;
 		}
-		// first module may be exe
-		const MODULEENTRY32W& me32 = entryList[0];
-		ULONG_PTR returnAddr = (ULONG_PTR)vReturnAddress;
-		ULONG_PTR baseAddr = (ULONG_PTR)me32.modBaseAddr;
-		ULONG_PTR endAddr = baseAddr + me32.modBaseSize;
-
-		if (returnAddr >= baseAddr && returnAddr < endAddr) {
-			gMapleR.Init(&entryList, L"MapleStory.exe");
-			if (gMapleR.IsInitialized()) {
-				DEBUG(L"gMapleR init ok");
-				return true;
-			}
-			else {
-				DEBUG(L"Failed to init gMapleR");
-				return false;
-			}
+		if (gMapleR.IsSectionInitialized()) {
+			DEBUG(L"Maple section list was already initialized");
+			return true;
 		}
-		return false;
+		gMapleR.InitSectionList(L"MapleStory.exe");
+		if (!gMapleR.IsSectionInitialized()) {
+			DEBUG(L"Failed to init maple section list");
+			return false;
+		}
+		DEBUG(L"Maple section list init ok");
+		return true;
 	}
 
 	static auto _GetStartupInfoA = decltype(&GetStartupInfoA)(GetProcAddress(GetModuleHandle(L"KERNEL32"), "GetStartupInfoA"));
 	VOID WINAPI GetStartupInfoA_Hook(LPSTARTUPINFOA lpStartupInfo) {
-		if (!bGetStartupInfoALoaded && lpStartupInfo && IsEXECaller(_ReturnAddress())) {
+		if (!bGetStartupInfoALoaded  && IsEXECaller(_ReturnAddress())) {
 			bGetStartupInfoALoaded = true;
 			// Click MapleStory.exe
 			if (!Network::InitWSAData()) {
